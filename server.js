@@ -1,6 +1,11 @@
 import 'dotenv/config';
 import express from 'express';
 import { randomUUID } from 'node:crypto';
+import { createReadStream } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 
@@ -40,6 +45,11 @@ const dispararWebhook = (payload) => {
     body: JSON.stringify(payload),
   }).catch((err) => console.error('[webhook] error:', err.message));
 };
+
+app.get('/', (_req, res) => {
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  createReadStream(join(__dirname, 'preview.html')).pipe(res);
+});
 
 app.get('/monitores', (_req, res) => res.json(monitores));
 
