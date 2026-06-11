@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TurnoMonitores — Asignar turno (preview)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #f4f6f8;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    padding: 32px;
+    width: 100%;
+    max-width: 480px;
+  }
+  h2 { font-size: 20px; font-weight: 600; margin-bottom: 4px; color: #1a1a2e; }
+  .subtitulo { font-size: 14px; color: #666; margin-bottom: 24px; }
+  .campo { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+  .campo label { font-size: 13px; font-weight: 500; color: #333; }
+  select, input {
+    padding: 9px 12px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-family: inherit;
+    width: 100%;
+    background: #fff;
+  }
+  select:focus, input:focus { outline: 2px solid #1d5fa8; outline-offset: 1px; border-color: transparent; }
+  .fila { display: flex; gap: 12px; }
+  .fila .campo { flex: 1; }
+  button {
+    width: 100%;
+    padding: 11px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    background: #1d5fa8;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background .15s;
+  }
+  button:hover:not(:disabled) { background: #174d89; }
+  button:disabled { background: #9db8d9; cursor: not-allowed; }
+  .mensaje {
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    display: none;
+  }
+  .mensaje.exito {
+    display: block;
+    background: #e8f5e9;
+    color: #1b5e20;
+    border: 1px solid #a5d6a7;
+  }
+  .mensaje.error {
+    display: block;
+    background: #fdecea;
+    color: #b71c1c;
+    border: 1px solid #f5c6c2;
+  }
+  .nota {
+    margin-top: 18px;
+    font-size: 12px;
+    color: #999;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Asignar turno de monitoría</h2>
+  <p class="subtitulo">TurnoMonitores · Universidad de Caldas</p>
+
+  <div class="campo">
+    <label for="salon">Salón</label>
+    <select id="salon">
+      <option value="">Selecciona un salón</option>
+      <option value="Sala E">Sala E</option>
+      <option value="Sala F">Sala F</option>
+      <option value="Sala H1">Sala H1</option>
+      <option value="Sala H2">Sala H2</option>
+    </select>
+  </div>
+
+  <div class="campo">
+    <label for="monitor">Monitor</label>
+    <select id="monitor">
+      <option value="">Selecciona un monitor</option>
+      <option value="Maria Fernanda Hernandez">Maria Fernanda Hernandez</option>
+      <option value="Juliana Moreno">Juliana Moreno</option>
+    </select>
+  </div>
+
+  <div class="campo">
+    <label for="materia">Materia</label>
+    <input id="materia" type="text" placeholder="Ej: Bases de Datos">
+  </div>
+
+  <div class="campo">
+    <label for="fecha">Fecha</label>
+    <input id="fecha" type="date">
+  </div>
+
+  <div class="fila">
+    <div class="campo">
+      <label for="horaInicio">Hora inicio</label>
+      <input id="horaInicio" type="time">
+    </div>
+    <div class="campo">
+      <label for="horaFin">Hora fin</label>
+      <input id="horaFin" type="time">
+    </div>
+  </div>
+
+  <button id="btnAsignar">Asignar turno</button>
+
+  <div id="mensaje" class="mensaje"></div>
+
+  <p class="nota">Preview con respuestas simuladas — no llama al backend</p>
+</div>
+
+<script>
+  const btn = document.getElementById('btnAsignar');
+  const mensaje = document.getElementById('mensaje');
+  const campos = ['salon', 'monitor', 'materia', 'fecha', 'horaInicio', 'horaFin'];
+
+  const leerForm = () => Object.fromEntries(
+    campos.map((id) => [id, document.getElementById(id).value])
+  );
+
+  const limpiarForm = () => campos.forEach((id) => {
+    document.getElementById(id).value = '';
+  });
+
+  const mostrar = (tipo, texto) => {
+    mensaje.className = 'mensaje ' + tipo;
+    mensaje.textContent = texto;
+  };
+
+  const simularRespuesta = (form) => new Promise((resolve) => {
+    setTimeout(() => {
+      if (form.salon === 'Sala E' && form.horaInicio < '13:00' && form.horaFin > '09:00') {
+        resolve({ status: 409, detalle: 'El salón ya tiene un turno de 09:00 a 13:00 ese día.' });
+      } else if (form.monitor === 'Juliana Moreno' && form.horaInicio < '14:00' && form.horaFin > '10:00') {
+        resolve({ status: 409, detalle: 'El monitor ya tiene un turno asignado de 10:00 a 14:00 ese día.' });
+      } else {
+        resolve({ status: 201 });
+      }
+    }, 900);
+  });
+
+  btn.addEventListener('click', async () => {
+    mensaje.className = 'mensaje';
+    const form = leerForm();
+
+    const vacio = campos.find((id) => !form[id]);
+    if (vacio) {
+      const etiquetas = {
+        salon: 'salón', monitor: 'monitor', materia: 'materia',
+        fecha: 'fecha', horaInicio: 'hora de inicio', horaFin: 'hora de fin',
+      };
+      mostrar('error', 'Falta el campo: ' + etiquetas[vacio] + '.');
+      return;
+    }
+
+    if (form.horaInicio >= form.horaFin) {
+      mostrar('error', 'La hora de inicio debe ser anterior a la hora de fin.');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Asignando…';
+
+    const res = await simularRespuesta(form);
+
+    btn.disabled = false;
+    btn.textContent = 'Asignar turno';
+
+    if (res.status === 201) {
+      mostrar('exito', 'Turno asignado: ' + form.monitor + ' en ' + form.salon +
+        ' el ' + form.fecha + ' de ' + form.horaInicio + ' a ' + form.horaFin + '.');
+      limpiarForm();
+    } else {
+      mostrar('error', res.detalle);
+    }
+  });
+</script>
+
+</body>
+</html>

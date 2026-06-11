@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TurnoMonitores — Asignar turno (preview)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #f4f6f8;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    color: #1a1a2e;
+  }
+  .card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    padding: 32px;
+    width: 100%;
+    max-width: 480px;
+  }
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .subtitulo {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 24px;
+  }
+  .campo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .campo label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #333;
+  }
+  select, input {
+    padding: 9px 12px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-family: inherit;
+    width: 100%;
+    background: #fff;
+    color: #1a1a2e;
+  }
+  select:focus, input:focus {
+    outline: 2px solid #1d5fa8;
+    outline-offset: 1px;
+    border-color: transparent;
+  }
+  .fila {
+    display: flex;
+    gap: 12px;
+  }
+  .fila .campo {
+    flex: 1;
+  }
+  .botones {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  button {
+    width: 100%;
+    padding: 11px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background .15s;
+  }
+  .btn-primario {
+    background: #1d3a6e;
+    color: #fff;
+  }
+  .btn-primario:hover:not(:disabled) {
+    background: #142a52;
+  }
+  .btn-secundario {
+    background: #fff;
+    color: #1d3a6e;
+    border: 1px solid #1d3a6e;
+  }
+  .btn-secundario:hover:not(:disabled) {
+    background: #f0f4fa;
+  }
+  button:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+  }
+  .mensaje {
+    margin-top: 14px;
+    padding: 11px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    display: none;
+  }
+  .mensaje.exito {
+    display: block;
+    background: #e8f5e9;
+    color: #1b5e20;
+    border: 1px solid #a5d6a7;
+  }
+  .mensaje.error {
+    display: block;
+    background: #fdecea;
+    color: #b71c1c;
+    border: 1px solid #f5c6c2;
+  }
+  .nota {
+    margin-top: 18px;
+    font-size: 12px;
+    color: #999;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<main class="card">
+  <h1>Asignar turno de monitoría</h1>
+  <p class="subtitulo">TurnoMonitores · Universidad de Caldas</p>
+
+  <div class="campo">
+    <label for="salon">Salón</label>
+    <select id="salon">
+      <option value="">Selecciona un salón</option>
+      <option value="Sala E">Sala E</option>
+      <option value="Sala F">Sala F</option>
+      <option value="Sala H1">Sala H1</option>
+      <option value="Sala H2">Sala H2</option>
+    </select>
+  </div>
+
+  <div class="campo">
+    <label for="monitor">Monitor</label>
+    <select id="monitor">
+      <option value="">Selecciona un monitor</option>
+      <option value="Maria Fernanda Hernandez">Maria Fernanda Hernandez</option>
+      <option value="Juliana Moreno">Juliana Moreno</option>
+    </select>
+  </div>
+
+  <div class="campo">
+    <label for="materia">Materia</label>
+    <input id="materia" type="text" placeholder="Ej: Bases de Datos">
+  </div>
+
+  <div class="campo">
+    <label for="fecha">Fecha</label>
+    <input id="fecha" type="date">
+  </div>
+
+  <div class="fila">
+    <div class="campo">
+      <label for="horaInicio">Hora inicio</label>
+      <input id="horaInicio" type="time">
+    </div>
+    <div class="campo">
+      <label for="horaFin">Hora fin</label>
+      <input id="horaFin" type="time">
+    </div>
+  </div>
+
+  <div class="botones">
+    <button id="btnAsignar" class="btn-primario">Asignar turno</button>
+    <button id="btnConflicto" class="btn-secundario">Simular conflicto</button>
+  </div>
+
+  <div id="mensaje" class="mensaje"></div>
+
+  <p class="nota">Preview con respuestas simuladas — no llama al backend</p>
+</main>
+
+<script>
+  const campos = ['salon', 'monitor', 'materia', 'fecha', 'horaInicio', 'horaFin'];
+  const btnAsignar = document.getElementById('btnAsignar');
+  const btnConflicto = document.getElementById('btnConflicto');
+  const mensaje = document.getElementById('mensaje');
+
+  const leerForm = () => Object.fromEntries(
+    campos.map((id) => [id, document.getElementById(id).value])
+  );
+
+  const limpiarForm = () => campos.forEach((id) => {
+    document.getElementById(id).value = '';
+  });
+
+  const mostrar = (tipo, texto) => {
+    mensaje.className = 'mensaje ' + tipo;
+    mensaje.textContent = texto;
+  };
+
+  const bloquearBotones = (estado) => {
+    btnAsignar.disabled = estado;
+    btnConflicto.disabled = estado;
+    btnAsignar.textContent = estado ? 'Asignando…' : 'Asignar turno';
+  };
+
+  btnAsignar.addEventListener('click', () => {
+    mensaje.className = 'mensaje';
+
+    const form = leerForm();
+    const algunVacio = campos.some((id) => !form[id]);
+
+    if (algunVacio) {
+      mostrar('error', 'Todos los campos son requeridos');
+      return;
+    }
+
+    bloquearBotones(true);
+
+    setTimeout(() => {
+      bloquearBotones(false);
+      mostrar(
+        'exito',
+        'Turno asignado: ' + form.monitor + ' en ' + form.salon +
+        ' el ' + form.fecha + ' de ' + form.horaInicio + ' a ' + form.horaFin + '.'
+      );
+      limpiarForm();
+    }, 1500);
+  });
+
+  btnConflicto.addEventListener('click', () => {
+    mensaje.className = 'mensaje';
+    bloquearBotones(true);
+
+    setTimeout(() => {
+      bloquearBotones(false);
+      mostrar('error', 'Conflicto de salón: L-204 ya tiene turno asignado en ese horario');
+    }, 1500);
+  });
+</script>
+
+</body>
+</html>
